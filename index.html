@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘 점심 어디로?</title>
+<style>
+:root {
+  --site-primary: #235B4A;
+  --site-on-primary: #FFFFFF;
+  --site-secondary: #E9C99B;
+  --site-on-secondary: #302416;
+  --site-background: #F7F4ED;
+  --site-on-background: #202820;
+  --site-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-font-heading: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-heading-scale: 1;
+  --site-spacing-scale: 1;
+  --site-radius-scale: 1;
+  --site-decoration-opacity: 1;
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--site-font-body); background: light-dark(#F7F4ED, #151B18); color: light-dark(#202820, #F0F3EF); }
+#app { min-height: 100vh; width: 100%; border-radius: 0; background-color: var(--site-background); color: var(--site-on-background); padding: calc(28px * var(--site-spacing-scale)) 18px 40px; }
+main { max-width: 760px; margin: 0 auto; }
+.hero { background: var(--site-primary); color: var(--site-on-primary); padding: calc(30px * var(--site-spacing-scale)); border-radius: calc(26px * var(--site-radius-scale)); position: relative; overflow: hidden; }
+.eyebrow { text-transform: uppercase; letter-spacing: .16em; font-size: 12px; opacity: .78; font-weight: 700; }
+h1 { font-family: var(--site-font-heading); font-size: calc(38px * var(--site-heading-scale)); line-height: 1.08; letter-spacing: -.04em; margin: 12px 0; }
+.subtitle { line-height: 1.6; opacity: .88; margin: 0; max-width: 480px; }
+.content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .9fr); gap: 18px; margin-top: 18px; align-items: stretch; }
+.panel { background: light-dark(#FFFFFF, #222A25); border: 1px solid light-dark(#E3E0D7, #37413A); border-radius: calc(22px * var(--site-radius-scale)); padding: calc(22px * var(--site-spacing-scale)); }
+h2 { font-size: calc(17px * var(--site-heading-scale)); margin: 0 0 16px; }
+.places { display: grid; gap: 9px; }
+.place { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: light-dark(#F8F7F2, #2B342E); border: 1px solid transparent; transition: .18s ease; }
+.place.winner { background: light-dark(#E4F0E9, #244637); border-color: #6AA68B; }
+.num { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; display: grid; place-items: center; background: var(--site-secondary); color: var(--site-on-secondary); font-size: 13px; font-weight: 800; }
+.place-name { flex: 1; font-weight: 650; }
+.tick { color: #56A77D; font-size: 20px; }
+.wheel-wrap { display: grid; place-items: center; margin: 6px auto 20px; position: relative; width: min(100%, 300px); }
+.pointer { position: absolute; top: -3px; left: 50%; transform: translateX(-50%); z-index: 2; width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-top: 25px solid #D65D42; filter: drop-shadow(0 2px 2px #0002); }
+#wheel { width: 100%; height: auto; overflow: visible; }
+.spin-btn { border: 0; width: 100%; border-radius: 15px; background: var(--site-primary); color: var(--site-on-primary); padding: 16px 18px; font: inherit; font-size: 16px; font-weight: 750; cursor: pointer; transition: transform .15s, opacity .15s; }
+.spin-btn:hover { opacity: .92; transform: translateY(-1px); }
+.spin-btn:disabled { opacity: .65; cursor: wait; }
+.result { margin-top: 16px; padding: 18px 14px; border-radius: 16px; background: light-dark(#F4E7D1, #403626); text-align: center; min-height: 110px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.result-label { font-size: 12px; letter-spacing: .08em; font-weight: 750; opacity: .7; }
+#resultName { font-size: 25px; font-weight: 850; letter-spacing: -.03em; }
+#resultHint { font-size: 12px; opacity: .7; }
+.footer { text-align: center; margin-top: 20px; color: light-dark(#6E756E, #A6B0A8); font-size: 12px; }
+@media (max-width: 640px) { #app { padding: 14px 12px 28px; } .hero { padding: 25px 22px; } h1 { font-size: calc(32px * var(--site-heading-scale)); } .content { grid-template-columns: 1fr; } .panel { padding: 18px; } .wheel-wrap { width: min(100%, 280px); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app" data-sites-preview-theme="custom">
+  <main>
+    <header class="hero">
+      <div class="eyebrow">LUNCH CLUB · DAILY PICK</div>
+      <h1>오늘 점심,<br>운명에 맡겨볼까?</h1>
+      <p class="subtitle">고민은 짧게, 점심은 맛있게. 아래 7곳 중 돌림판이 오늘의 식당을 정해드립니다.</p>
+    </header>
+    <section class="content">
+      <div class="panel">
+        <h2>오늘의 후보 7곳</h2>
+        <div class="places" id="places"></div>
+      </div>
+      <div class="panel">
+        <h2>점심 돌림판</h2>
+        <div class="wheel-wrap"><div class="pointer"></div><svg id="wheel" viewBox="0 0 300 300" role="img" aria-label="7개 식당 돌림판"></svg></div>
+        <button class="spin-btn" id="spin">🎲 돌림판 돌리기</button>
+        <div class="result" aria-live="polite">
+          <div class="result-label">TODAY'S PICK</div>
+          <div id="resultName">어디로 갈까요?</div>
+          <div id="resultHint">버튼을 눌러 점심 식당을 정해보세요.</div>
+        </div>
+      </div>
+    </section>
+    <div class="footer">한 번 뽑았다면… 오늘은 운명을 믿어보세요 😉</div>
+  </main>
+</div>
+<script>
+const restaurants = ["이모네", "Numb", "와카우", "OGOG", "SuperGreen", "Ureshi (옛날돈까스)", "누들스타K"];
+const colors = ["#E9B86E", "#D98970", "#9EBCA5", "#E9D78F", "#8FB8C7", "#D8A7B8", "#B8ACD6"];
+const svgNS = "http://www.w3.org/2000/svg";
+const wheel = document.getElementById("wheel");
+const list = document.getElementById("places");
+let rotation = 0;
+let busy = false;
+let winner = -1;
+function el(tag, attrs = {}) { const node = document.createElementNS(svgNS, tag); Object.entries(attrs).forEach(([k,v]) => node.setAttribute(k, v)); return node; }
+function drawWheel() {
+  wheel.innerHTML = "";
+  const n = restaurants.length, cx = 150, cy = 150, r = 140;
+  restaurants.forEach((name, i) => {
+    const start = (-90 + i * 360 / n) * Math.PI / 180;
+    const end = (-90 + (i + 1) * 360 / n) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
+    const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
+    wheel.appendChild(el("path", { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`, fill: colors[i], stroke: "#fff", "stroke-width": 2 }));
+    const mid = (start + end) / 2;
+    const tx = cx + 91 * Math.cos(mid), ty = cy + 91 * Math.sin(mid);
+    const text = el("text", { x: tx, y: ty, fill: "#302D27", "font-size": name.length > 12 ? 10 : 12, "font-weight": 750, "text-anchor": "middle", "dominant-baseline": "middle", transform: `rotate(${mid * 180 / Math.PI + 90}, ${tx}, ${ty})` });
+    text.textContent = name; wheel.appendChild(text);
+  });
+  wheel.appendChild(el("circle", { cx, cy, r: 23, fill: "#FFFCF5", stroke: "#235B4A", "stroke-width": 3 }));
+  const center = el("text", { x: cx, y: cy + 4, fill: "#235B4A", "font-size": 10, "font-weight": 900, "text-anchor": "middle" });
+  center.textContent = "LUNCH"; wheel.appendChild(center);
+}
+function renderList() {
+  list.innerHTML = "";
+  restaurants.forEach((name, i) => {
+    const row = document.createElement("div"); row.className = "place" + (winner === i ? " winner" : "");
+    const num = document.createElement("div"); num.className = "num"; num.textContent = i + 1;
+    const label = document.createElement("div"); label.className = "place-name"; label.textContent = name;
+    row.append(num, label);
+    if (winner === i) { const tick = document.createElement("span"); tick.className = "tick"; tick.textContent = "✓"; row.appendChild(tick); }
+    list.appendChild(row);
+  });
+}
+function spin() {
+  if (busy) return;
+  busy = true;
+  const button = document.getElementById("spin"); button.disabled = true; button.textContent = "🎡 돌리는 중…";
+  winner = Math.floor(Math.random() * restaurants.length);
+  const n = restaurants.length;
+  const slice = 360 / n;
+  // Pointer is at the top; each slice center starts at -90 degrees.
+  const targetMod = (360 - (winner * slice + slice / 2)) % 360;
+  const currentMod = ((rotation % 360) + 360) % 360;
+  const delta = (targetMod - currentMod + 360) % 360;
+  rotation += 360 * 6 + delta;
+  wheel.style.transition = "transform 4.2s cubic-bezier(.12,.72,.08,1)";
+  wheel.style.transform = `rotate(${rotation}deg)`;
+  window.setTimeout(() => {
+    document.getElementById("resultName").textContent = restaurants[winner];
+    document.getElementById("resultHint").textContent = "오늘 점심은 여기로 결정!";
+    renderList(); busy = false; button.disabled = false; button.textContent = "🔄 다시 돌리기";
+  }, 4300);
+}
+drawWheel(); renderList(); document.getElementById("spin").addEventListener("click", spin);
+</script>
+</body>
+</html>
